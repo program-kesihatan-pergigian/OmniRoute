@@ -40,6 +40,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    networks:
+      - omniroute-network
 
   omniroute-prod:
     container_name: omniroute-prod
@@ -50,10 +52,8 @@ services:
         condition: service_started
     build:
       context: .
-      target: runner-cli
-      args:
-        OMNIROUTE_BASE_PATH: ${OMNIROUTE_BASE_PATH:-}
-    image: omniroute:prod
+      target: runner-web
+    image: omniroute:prod-web
     restart: unless-stopped
     stop_grace_period: 40s
     env_file: .env
@@ -76,9 +76,9 @@ services:
       # APP_BIND_HOST comment for the rationale. Override for a LAN/WAN prod
       # deployment only once REQUIRE_API_KEY=true or a reverse proxy in front
       # of this instance is confirmed to enforce its own auth.
-      - "${APP_BIND_HOST:-127.0.0.1}:${PROD_DASHBOARD_PORT:-20130}:${DASHBOARD_PORT:-${PORT:-20128}}"
-      - "${APP_BIND_HOST:-127.0.0.1}:${PROD_API_PORT:-20131}:${API_PORT:-20129}"
-      - "${APP_BIND_HOST:-127.0.0.1}:${PROD_LIVE_WS_PORT:-20132}:${LIVE_WS_PORT:-20132}"
+      - "${APP_BIND_HOST:-127.0.0.1}:${PROD_DASHBOARD_PORT:-4000}:${DASHBOARD_PORT:-${PORT:-20128}}"
+      - "${APP_BIND_HOST:-127.0.0.1}:${PROD_API_PORT:-5001}:${API_PORT:-20129}"
+      - "${APP_BIND_HOST:-127.0.0.1}:${PROD_LIVE_WS_PORT:-5002}:${LIVE_WS_PORT:-20132}"
     volumes:
       - omniroute-prod-data:/app/data
     healthcheck:
@@ -87,6 +87,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    networks:
+      - omniroute-network
 
   chatgpt-web-codex-browser:
     build:
@@ -97,6 +99,8 @@ services:
     shm_size: "2gb"
     volumes:
       - chatgpt-web-codex-browser-prod-data:/browser-profile
+    networks:
+      - omniroute-network
 
 volumes:
   chatgpt-web-codex-browser-prod-data:
@@ -105,3 +109,8 @@ volumes:
     name: omniroute-prod-data
   redis-prod-data:
     name: redis-prod-data
+
+networks:
+  omniroute-network:
+    name: omniroute-network
+    external: true
